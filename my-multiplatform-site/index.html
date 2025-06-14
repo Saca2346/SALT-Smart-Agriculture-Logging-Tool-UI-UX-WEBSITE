@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring Tanaman Pintar</title>
+    
+    <!-- Tailwind CSS (diperlukan untuk kelas utilitas) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome (untuk ikon) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js (untuk grafik) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- File CSS Kustom -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div id="app" class="flex">
+        <!-- Panel Notifikasi Geser -->
+        <div id="notification-center" class="fixed top-0 right-0 h-full w-full sm:w-80 bg-gray-800 shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-white">Notifikasi</h3>
+                <button id="close-notifications" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            <ul id="notification-list" class="overflow-y-auto h-[calc(100vh-60px)] p-2">
+                <!-- Notifikasi akan diisi oleh JavaScript -->
+            </ul>
+        </div>
+        
+        <!-- Konten Utama -->
+        <div class="w-full transition-all duration-300">
+            <div class="dashboard-container p-4 sm:p-6 lg:p-8 space-y-6">
+                <!-- Header -->
+                <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-white">Dashboard Pertanian Cerdas</h1>
+                        <p id="current-datetime" class="text-sm text-gray-400 mt-1"></p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                         <span class="text-sm font-medium">Status: <span class="status-indicator-network inline-block px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">Online</span></span>
+                        <button id="notification-bell" class="relative text-gray-400 hover:text-white transition">
+                            <i class="fas fa-bell fa-lg"></i>
+                            <span id="notification-count" class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-900">0</span>
+                        </button>
+                        <button id="refresh-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="hidden sm:inline">Refresh</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Grid Utama -->
+                <main class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+                    <!-- Kartu Data Sensor -->
+                    <div class="md:col-span-2 xl:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="card bg-gray-800 p-6 rounded-xl shadow-lg transition hover:-translate-y-1 hover:shadow-indigo-500/30">
+                            <h2 class="font-semibold text-white mb-4 flex items-center gap-3"><i class="fas fa-thermometer-half text-red-400"></i> Suhu & Kelembaban Udara</h2>
+                            <div class="flex justify-around items-center text-center h-full">
+                                <div id="temperature-card">
+                                    <span id="temperature-value" class="text-4xl font-bold text-red-400">--</span><span class="text-red-400">°C</span>
+                                    <p class="text-sm text-gray-400 mt-1">Suhu</p>
+                                </div>
+                                <div class="border-l h-16 border-gray-700"></div>
+                                <div id="humidity-card">
+                                    <span id="humidity-value" class="text-4xl font-bold text-blue-400">--</span><span class="text-blue-400">%</span>
+                                    <p class="text-sm text-gray-400 mt-1">Kelembaban</p>
+                                </div>
+                            </div>
+                            <div id="air-status" class="status-message text-center mt-4 text-sm font-medium p-2 rounded-lg"></div>
+                        </div>
+
+                        <div class="card bg-gray-800 p-6 rounded-xl shadow-lg transition hover:-translate-y-1 hover:shadow-indigo-500/30">
+                            <h2 class="font-semibold text-white mb-4 flex items-center gap-3"><i class="fas fa-layer-group text-yellow-400"></i> Kelembaban Tanah</h2>
+                            <div id="soil-moisture-card" class="text-center my-4">
+                                <span id="soil-moisture-value" class="text-5xl font-bold text-yellow-400">--</span><span class="text-2xl text-yellow-400">%</span>
+                            </div>
+                             <div id="soil-status" class="status-message text-center mt-4 text-sm font-medium p-2 rounded-lg"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Kartu Kontrol Aktuator -->
+                    <div class="md:col-span-2 xl:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                         <div class="card bg-gray-800 p-6 rounded-xl shadow-lg transition hover:-translate-y-1 hover:shadow-indigo-500/30 flex flex-col justify-between">
+                            <h2 class="font-semibold text-white mb-4 flex items-center gap-3"><i class="fas fa-tint text-cyan-400"></i> Kontrol Pompa Air</h2>
+                            <div class="flex justify-between items-center my-3">
+                                <span id="pumpStatusText" class="font-bold text-lg">OFF</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="pumpToggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="text-xs text-gray-400 space-y-2 pt-3 border-t border-gray-700">
+                                <p class="flex justify-between"><span>Terakhir Aktif:</span> <span id="lastPumpActivation" class="font-medium text-gray-300">--</span></p>
+                                <p class="flex justify-between"><span>Durasi Hari Ini:</span> <span id="pumpDurationToday" class="font-medium text-gray-300">--</span></p>
+                            </div>
+                        </div>
+                        <div class="card bg-gray-800 p-6 rounded-xl shadow-lg transition hover:-translate-y-1 hover:shadow-indigo-500/30 flex flex-col justify-between">
+                            <h2 class="font-semibold text-white mb-4 flex items-center gap-3"><i class="fas fa-wind text-purple-400"></i> Kontrol Blower</h2>
+                            <div class="flex justify-between items-center my-3">
+                                <span id="blowerStatusText" class="font-bold text-lg">OFF</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="blowerToggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                             <div class="text-xs text-gray-400 space-y-2 pt-3 border-t border-gray-700">
+                                <p class="flex justify-between"><span>Terakhir Aktif:</span> <span id="lastBlowerActivation" class="font-medium text-gray-300">--</span></p>
+                                <p class="flex justify-between"><span>Durasi Hari Ini:</span> <span id="blowerDurationToday" class="font-medium text-gray-300">--</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tinjauan Tanaman -->
+                    <section id="plant-overview" class="md:col-span-2 xl:col-span-4 bg-gray-800 p-6 rounded-xl shadow-lg">
+                         <h2 class="font-semibold text-white mb-4 text-lg">Tinjauan Tanaman</h2>
+                         <div id="plant-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                             <!-- Kartu tanaman akan di-generate oleh JavaScript -->
+                         </div>
+                    </section>
+
+                    <!-- Analisis Data Historis -->
+                    <section class="md:col-span-2 xl:col-span-4 card bg-gray-800 p-6 rounded-xl shadow-lg">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                             <h2 class="font-semibold text-white text-lg mb-2 sm:mb-0">Analisis Data Historis</h2>
+                             <div id="tab-navigation" class="flex flex-wrap border-b border-gray-700">
+                                <!-- Tombol tab akan di-generate oleh JavaScript -->
+                             </div>
+                        </div>
+                        <div id="tab-content" class="mt-4 min-h-[400px]">
+                            <!-- Konten tab akan di-generate oleh JavaScript -->
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File JavaScript Kustom -->
+    <script src="script.js"></script>
+</body>
+</html>
